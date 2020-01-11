@@ -15,7 +15,7 @@
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
       crossorigin="anonymous"></script>
 
-    <!-- Ajax -->
+    <!-- Ajax - D3 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
       crossorigin="anonymous"></script>
 
@@ -28,6 +28,9 @@
     <!-- Our CSS -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="d3Style.css">
+
+    <!-- Apex Chart Javascript Library -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 </head>
 
@@ -78,17 +81,20 @@
     <div class = "row"></div>
 
             <!-- Footer-->
-            <div id="footer">
+            <div class="footer text-center">
+              <p>Special thanks to: </p>
               <p>The Coding Boot Camp&copy;2020</p>
             </div>
     </div>
 
   <!-- Call the supporting javascript files -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.5.0/d3.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="map.js"></script>
-  <script src="plot.js"></script>
-  <script src="dashboard.js"></script>
+
+  <script type="text/javascript" src="map.js"></script>
+  <script type="text/javascript" src="plot.js"></script>
+  <script type="text/javascript" src="dashboard.js"></script>
 
 
 </body>
