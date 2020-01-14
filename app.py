@@ -16,15 +16,15 @@ collection = db.traffic_stops
 #**********************************
 #        Set up the routes         
 #**********************************
+# html pages
 @app.route("/")
-def welcome():
-    """List all available api routes."""
-    return (
-        f"<br>Available Routes:<br/>"
-        f"<br>/trafficdata<br/>"
-        f"<br>/trafficdata100<br/>"
-        )   
-# All the traffic stop data
+def IndexRoute():
+    """This function runs when the browser loads the index route"""
+    
+    webpage = render_template('index.html')
+    return webpage
+
+# Data routes
 @app.route("/trafficdata")
 def trafficdata():
     # Need to handle the issue with the _id field in MongoDB 
