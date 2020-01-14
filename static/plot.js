@@ -1,129 +1,208 @@
-console.log ("load plot.js");
+// NOTES: rendering using data from CSV in server folder
 
-d3.json("/trafficdata100").then(function (data){
-    console.log (data);
-    d3.selectAll('.plot').text('We made it to the js file!');
-});
+// use data in csv file to generate plot to tinker
+d3.csv("Traffic_Stop_Cleaned_Data.csv").then(function(data, err) 
+{
+    // cut to error function if problem comes up in code
+    if (err) throw err;
 
-// // NOTES: rendering using data from CSV in server folder
+    // check if csv file loaded:
+    console.log(data[0])
 
-// // use data in csv file to generate plot to tinker
-// d3.csv("traffic_stop_TEST.csv").then(function(data, err) 
-// {
-//     // cut to error function if problem comes up in code
-//     if (err) throw err;
-
-//     // check if csv file loaded:
-//     console.log(data[0])
-
-//     // -------------------------------------------------
-//     // Source: Week Javascript, Day 3, Activity 3
-//     // // cycle through each traffic stop dictionary in the list to graph and count occurences
-//     // Object.entries(data).forEach(function([key, value]) {
+    // -------------------------------------------------
+    // Source :https://stackoverflow.com/questions/44387647/group-and-count-values-in-an-array/44387859
         
-//     //     // console.log(key, value);
-//     //     // displays each dictionary corresponding to the traffic stop
-//     // });
+        // // data is an array of dictionaries - WORKING CODE
+        // var RaceCount = data.reduce((p, c) => {
+        //   var race = c.Race;
 
+        //   if (!p.hasOwnProperty(race)) {
+        //     p[race] = 0;
+        //   }
+        //   p[race]++;
+        //   return p;
+        // }, {});
+        
+        // console.log(RaceCount);
+        
+        // var countsExtended = Object.keys(RaceCount).map(k => {
+        //   return {Race: k, count: RaceCount[k]}; });
+        
+        // console.log(countsExtended);
 
-//     // -------------------------------------------------
-//     // Source : https://gist.github.com/JamieMason/0566f8412af9fe6a1d470aa1e089a752
+    // filter data by "Equipment Violation"-----------------------------------------------------------
+    let Equipement = data.filter(it => it.Reason.includes('Equipment Violation'));
+    // console.log(Equipement);
 
-//     // const groupBy = key => array =>
-//     // array.reduce((objectsByKeyValue, obj) => {
-//     //     const value = obj[key];
-//     //     objectsByKeyValue[value] = (objectsByKeyValue[value] || []).concat(obj);
-//     //     return objectsByKeyValue;
-//     // }, {});
-
-//     // const groupByGender = groupBy('GENDER OF DRIVER');
-//     // const groupByRace = groupBy('RACE OF DRIVER');
-
-//     // console.log(
-//     // JSON.stringify({
-//     //     groupByRace: groupByRace(data),
-//     // }, null, 2)
-//     // );
-
-
-//     // -------------------------------------------------
-//     // Source :https://stackoverflow.com/questions/44387647/group-and-count-values-in-an-array/44387859
-
-//     var counts = data.issues.reduce((p, c) => {
-//         var name = c.fields.status.name;
-//         if (!p.hasOwnProperty(name)) {
-//           p[name] = 0;
-//         }
-//         p[name]++;
-//         return p;
-//       }, {});
+    // count race of Equipment Violoation 
+    var EquipementGroupbyRace = Equipement.reduce((p, c) => {
+        var race = c.Race;
+        var reason = c.Reason;
+        if (!p.hasOwnProperty(race)) {
+          p[race] = 0;
+          p[race][reason]=0;
+        }
+        p[race]++;
+        p[race][reason]++;
+        return p;
+      }, {});
       
-//       console.log(counts);
+      console.log(EquipementGroupbyRace);
       
-//       var countsExtended = Object.keys(counts).map(k => {
-//         return {name: k, count: counts[k]}; });
+      var EquipementGroupbyRaceExtended = Object.keys(EquipementGroupbyRace).map(k => {
+        return {Race: k, count: EquipementGroupbyRace[k]}; });
       
-//       console.log(countsExtended);
+      console.log(EquipementGroupbyRaceExtended);
 
-//     // load apex javascript library
-//     var options = {
-//         series: [{
-//           name: 'PRODUCT A',
-//           data: [44, 55, 41, 67, 22, 43]
-//         }, {
-//           name: 'PRODUCT B',
-//           data: [13, 23, 20, 8, 13, 27]
-//         }, {
-//           name: 'PRODUCT C',
-//           data: [11, 17, 15, 15, 21, 14]
-//         }, {
-//           name: 'PRODUCT D',
-//           data: [21, 7, 25, 13, 22, 8]
-//         }],
-//         chart: {
-//           type: 'bar',
-//           height: 350,
-//           stacked: true,
-//           toolbar: {
-//             show: true
-//           },
-//           zoom: {
-//             enabled: true
-//           }
-//         },
-//         responsive: [{
-//           breakpoint: 480,
-//           options: {
-//             legend: {
-//               position: 'bottom',
-//               offsetX: -10,
-//               offsetY: 0
-//             }
-//           }
-//         }],
-//         plotOptions: {
-//           bar: {
-//             horizontal: false,
-//           },
-//         },
-//         xaxis: {
-//           type: 'datetime',
-//           categories: ['01/01/2011 GMT', '01/02/2011 GMT', '01/03/2011 GMT', '01/04/2011 GMT',
-//             '01/05/2011 GMT', '01/06/2011 GMT'
-//           ],
-//         },
-//         legend: {
-//           position: 'right',
-//           offsetY: 40
-//         },
-//         fill: {
-//           opacity: 1
-//         }
-//       };
+    // filter data by "Investigative Stop"-----------------------------------------------------------
+    let Investigate = data.filter(it => it.Reason.includes('Investigative Stop'));
+    // console.log(Investigate);
 
-//       var chart = new ApexCharts(document.querySelector("#plot"), options);
-//       chart.render();
+    // count race of Investigative Stop 
+    var InvestigateGroupbyRace = Investigate.reduce((p, c) => {
+        var race = c.Race;
+        var reason = c.Reason;
+        if (!p.hasOwnProperty(race)) {
+          p[race] = 0;
+          p[race][reason]=0;
+        }
+        p[race]++;
+        p[race][reason]++;
+        return p;
+      }, {});
+      
+      // console.log(InvestigateGroupbyRace);
+      
+      var InvestigateGroupbyRaceExtended = Object.keys(InvestigateGroupbyRace).map(k => {
+        return {Race: k, count: InvestigateGroupbyRace[k]}; });
+      
+      console.log(InvestigateGroupbyRaceExtended);
 
-// }).catch(function(error) {
-// 	console.log(error);
-// });
+
+    // filter data by "Moving Violation"-----------------------------------------------------------
+    let Moving = data.filter(it => it.Reason.includes('Moving Violation'));
+    // console.log(Moving);
+
+    // count race of "Moving Violation" 
+    var MovingGroupbyRace = Moving.reduce((p, c) => {
+        var race = c.Race;
+        var reason = c.Reason;
+        if (!p.hasOwnProperty(race)) {
+          p[race] = 0;
+          p[race][reason]=0;
+        }
+        p[race]++;
+        p[race][reason]++;
+        return p;
+      }, {});
+      
+      // console.log(MovingGroupbyRace);
+      
+      var MovingGroupbyRaceExtended = Object.keys(MovingGroupbyRace).map(k => {
+        return {Race: k, count: MovingGroupbyRace[k]}; });
+      
+      console.log(MovingGroupbyRaceExtended);
+
+    // filter data by 911 Call-----------------------------------------------------------
+    let Call = data.filter(it => it.Reason.includes('911 Call / Citizen Reported'));
+    // console.log(Moving);
+
+    // count race of 911 Call 
+    var CallGroupbyRace = Call.reduce((p, c) => {
+        var race = c.Race;
+        var reason = c.Reason;
+        if (!p.hasOwnProperty(race)) {
+          p[race] = 0;
+          p[race][reason]=0;
+        }
+        p[race]++;
+        p[race][reason]++;
+        return p;
+      }, {});
+      
+      // console.log(CallGroupbyRace);
+      
+      var CallGroupbyRaceExtended = Object.keys(CallGroupbyRace).map(k => {
+        return {Race: k, count: CallGroupbyRace[k]}; });
+      
+      console.log(CallGroupbyRaceExtended);
+
+      // reformat Groupby's into arrays for Bar Chart inputs
+      categories = Object.keys(EquipementGroupbyRace);
+      EquipmentArray = Object.values(EquipementGroupbyRace);
+      console.log(categories);
+      console.log(EquipmentArray);
+
+      InvestigateArray = Object.values(InvestigateGroupbyRace);
+      MovingArray = Object.values(MovingGroupbyRace);
+      CallArray = Object.values(CallGroupbyRace);
+
+
+  // APEX code for bar graph
+    var options = {
+        series: [{
+          name: 'Equipment Violation',
+          data: EquipmentArray
+        }, {
+          name: 'Investigative Stop',
+          data: InvestigateArray
+        }, {
+          name: 'Moving Violation',
+          data: MovingArray
+        }, {
+          name: '911 Call / Citizen Reported',
+          data: CallArray
+        }],
+        chart: {
+          type: 'bar',
+          // height: 450,
+          // width: 500,
+          stacked: true,
+          toolbar: {
+            show: true
+          },
+          zoom: {
+            enabled: true
+          }
+        },
+        responsive: [{
+          breakpoint: 480,
+          options: {
+            legend: {
+              position: 'bottom',
+              offsetX: -10,
+              offsetY: 0
+            }
+          }
+        }],
+        dataLabels: {
+          enabled: false
+        },
+        plotOptions: {
+          bar: {
+            horizontal: false,
+          },
+        },
+        xaxis: {
+          categories: categories,
+        },
+        legend: {
+          position: 'right',
+          offsetY: 20
+        },
+        fill: {
+          opacity: 1
+        },
+        yaxis: {
+          title: {
+            text: 'Count'
+          }
+        }
+      };
+
+      var chart = new ApexCharts(document.querySelector("#plot"), options);
+      chart.render();
+
+}).catch(function(error) {
+	console.log(error);
+});
