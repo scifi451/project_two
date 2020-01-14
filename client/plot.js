@@ -42,7 +42,8 @@ d3.csv("traffic_stop_TEST.csv").then(function(data, err)
     // -------------------------------------------------
     // Source :https://stackoverflow.com/questions/44387647/group-and-count-values-in-an-array/44387859
 
-    var counts = data.issues.reduce((p, c) => {
+    // data is an array of dictionaries
+    var counts = b.issues.reduce((p, c) => {
         var name = c.fields.status.name;
         if (!p.hasOwnProperty(name)) {
           p[name] = 0;
