@@ -1,6 +1,7 @@
 #VS Studio code
 settings.json
 **/.vscode
+.vscode/
 
 #ignore Config file
 config.js
