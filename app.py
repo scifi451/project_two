@@ -6,6 +6,7 @@ import json
 app = Flask(__name__)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] =0
 
+
 # setup mongo connection
 conn = "mongodb://localhost:27017"
 client = pymongo.MongoClient(conn)

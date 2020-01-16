@@ -1,58 +1,118 @@
 console.log ("load map.js");
 
-d3.json("/trafficdata100").then(function (data){
-    console.log (data);
-    d3.selectAll('.map').text('We made it to the js file!');
+// function to convert location to an array of lattidue and longitude
+function lat_lon(location)
+{
+    var lat_lon = location.split(',');
+    latitude = lat_lon[0].substring(1, lat_lon[0].length);
+    longitude = lat_lon[1].substring(0, lat_lon[1].length-1 );
+    return {lat: latitude, lon: longitude};
+};
+
+// Creating map object
+var startLocation = [44.95, -93.09];
+var stPaulMap = L.map("map", {
+    center: startLocation,
+    zoom: 13,
+    layers: [baseMaps.Outdoors]
+  });
+
+var trafficdataPath = "/trafficdata"; //"/trafficdata100"
+
+// Grab the data with d3
+d3.json(trafficdataPath).then(function(response, err) 
+{
+    // cut to error function if problem comes up in code
+    if (err) throw err;
+    
+    console.log("traffic data response in map.js");
+    console.log(response);
+
+    // Create a new marker cluster group
+    var markers = L.markerClusterGroup();
+
+    console.log("Response length:");
+    console.log(response.length);
+
+
+    // Loop through data
+    for (var i = 0; i < response.length; i++) 
+    {
+
+        // Set the data location property to a variable
+        var location = lat_lon(response[i].Location);
+
+        // Check for location property
+        if (location) 
+        {
+            // Add a new marker to the cluster group and bind a pop-up
+            var icon = L.ExtraMarkers.icon(
+                {
+                    icon: "ion-settings",
+                    iconColor: "yellow",
+                    markerColor: "green",
+                    shape: "circle"
+                });
+        
+            // markers.addLayer(L.marker([location.lat, location.lon])
+            markers.addLayer(L.marker([location.lat, location.lon],icon)
+                .bindPopup("<p><b>" + "Reason: " +  response[i].Reason + "</b></p><hr>"
+                    + "<p>Ticket Issued: " +  response[i].Citation + "</p>"
+                    + "<p>Gender  " + response[i].Gender + "</p>"
+                    + "<p>Race  " + response[i].Race + "</p>"
+                    + "<p>Driver Searched  " + response[i].DriverSearched + "</p>"
+                    + "<p>Vehicle Searched  " + response[i].VehicleSearched + "</p>"
+                    + "<p>Race  " + response[i].Race + "</p>"
+                    + "<p>Date  " + response[i].Date + "</p>"
+                ));
+        }
+    }
+
+    // Add our marker cluster layer to the map
+    stPaulMap.addLayer(markers);
+
 });
 
-// // Creating map object
-// var myMap = L.map("map", {
-//     center: [44.95, -93.09],
-//     zoom: 13
-//   });
-  
-//   // Adding tile layer to the map
-//   L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
-//     attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
-//     maxZoom: 18,
-//     id: "mapbox.streets",
-//     accessToken: API_KEY
-//   }).addTo(myMap);
-  
-//   // Store API query variables
-//   var baseURL = "https://information.stpaul.gov/resource/kkd6-vvns.json?";
-//   // var year = "year_of_stop=2018";
-//   // // var complaint = "&complaint_type=Rodent";
-//   // var limit = "&$limit=500";
-  
-//   // Assemble API query URL
-//   var url = baseURL; //+ year + limit ;
-  
-//   // Grab the data with d3
-//   d3.json(url, function(response) {
-//     console.log(response)
-  
-//     // Create a new marker cluster group
-//     var markers = L.markerClusterGroup();
-  
-//     // Loop through data
-//     for (var i = 0; i < response.length; i++) {
-  
-//       // Set the data location property to a variable
-//       var location = response[i].location_of_stop_by_police_grid;
-  
-//       // Check for location property
-//       if (location) {
-  
-//         // Add a new marker to the cluster group and bind a pop-up
-//         markers.addLayer(L.marker([location.latitude, location.longitude])
-//           .bindPopup("<h3>" + "Reason: " +  response[i].reason_for_stop + "</h3> <hr> <h3>" + "Ticket Issued: " +  response[i].race_of_driver));
-//       }
-  
-//     }
-  
-//     // Add our marker cluster layer to the map
-//     myMap.addLayer(markers);
-  
-//   });
-  
+console.log("Did we get here?");
+
+// Grab the fault line data
+var stPaulPrecincts = "static/Saint_Paul_Police_Grid.geojson";
+
+console.log(`St Paul Precincts ${stPaulPrecincts}`);
+
+// Create a layer for fault line data
+var precinctLayer = L.layerGroup().addTo(stPaulMap);
+
+console.log("Precinct layer created");
+
+// Grabbing our GeoJSON data..
+d3.json(stPaulPrecincts).then(function(data, err) 
+{
+    // cut to error function if problem comes up in code
+    if (err) throw err;
+
+    console.log("St Paul Precincts data");
+    console.log(data);
+    // Creating a geoJSON layer with the retrieved data
+    L.geoJson(data, 
+    {
+        // Style each feature (in this case a neighborhood)
+        style: function(feature) 
+        {
+        return {
+            color: "orange",
+            fillOpacity: 0.0,
+            weight: 1.5
+        };
+        }
+    }).addTo(precinctLayer);
+});
+
+// Create a dictionary of overlays
+var overlayMaps = {
+    "Precincts": precinctLayer
+};
+
+// Pass our map layers into our layer control
+// Add the layer control to the map
+L.control.layers(baseMaps, overlayMaps).addTo(stPaulMap); 

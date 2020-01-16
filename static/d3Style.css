@@ -52,6 +52,10 @@
   border-radius: 4px;
 }
 
+.map, body, html {
+  height: 100vw
+}
+
 /* Mobile Rules */
 @media screen and (max-width: 530px) {
   .stateText {

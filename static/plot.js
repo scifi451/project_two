@@ -1,3 +1,10 @@
+// NOTES: rendering using data from CSV in server folder
+
+// use data in csv file to generate plot to tinker
+d3.json("/trafficdata100").then(function(data, err) 
+{
+    // cut to error function if problem comes up in code
+    if (err) throw err;
 
     // check if csv file loaded:
     // console.log(data[0])
@@ -218,4 +225,4 @@
     }
 
     Init();
-
+  });

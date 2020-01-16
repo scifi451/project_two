@@ -139,3 +139,5 @@ dmypy.json
 
 **/.DS_store
 **/.DS_Store
+
+config.js
