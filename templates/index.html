@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 
+<!-- Note : need to run insert_data.py to create the mongo database -->
+
 <head>
 
     <meta charset="UTF-8">
@@ -26,8 +28,8 @@
       crossorigin="anonymous">
 
     <!-- Our CSS -->
-    <link rel="stylesheet" href="static/style.css">
-    <link rel="stylesheet" href="static/d3Style.css"> 
+    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="../static/d3Style.css"> 
 
     <!-- Apex Chart Javascript Library -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -71,9 +73,20 @@
 
         <!-- Create a column for dashboard information -->
         <div class="col-4">
-            <div id="dashboard">
-                <!-- We append our dashboard here. -->
-            </div>
+          <div class="row">
+            <!-- placeholder for the drop-down/interactive part of page -->
+            <select id="selDataset" onchange="graphChange(this.value)">
+                <option value="race">Race</option>
+                <option value="gender">Gender</option>
+                <option value="DriverSearched">Driver Searched?</option>
+                <option value="VehicleSearched">Vehicle Searched?</option>
+            </select> 
+          </div>
+          <div class="row">
+              <div id="dashboard">
+                  <!-- We append our dashboard here. -->
+              </div>
+          </div>
         </div>
     </div>
 
@@ -93,9 +106,9 @@
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
   <script src="https://d3js.org/d3.v5.min.js"></script>
-  <script type="text/javascript" src="static/dashboard.js"></script>
-  <<script type="text/javascript" src="static/map.js"></script>
-  <script type="text/javascript" src="static/plot.js"></script>
+  <script type="text/javascript" src="../static/dashboard.js"></script>
+  <<script type="text/javascript" src="../static/map.js"></script>
+  <script type="text/javascript" src="../static/plot.js"></script>
 
 
 </body>
