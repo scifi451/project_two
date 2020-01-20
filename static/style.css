@@ -50,6 +50,12 @@
            box-sizing: border-box;
  }
  
+ .mapStyle {
+   height: 700px;
+   width: 100%
+ }
+
+
  html {
    font-family: sans-serif;
    line-height: 1.15;

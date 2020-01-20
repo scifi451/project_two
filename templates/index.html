@@ -39,12 +39,19 @@
     <link rel="stylesheet" type="text/css" href="http://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
     <link rel="stylesheet" href="static/leaflet.extra-markers.min.css">
 
+    <!-- Leaflet-Choropleth JavaScript -->
+    <script type="text/javascript" src="static/choropleth.js"></script>
+    
     <!-- Our CSS -->
-    <link rel="stylesheet" href="../static/style.css">
     <link rel="stylesheet" href="../static/d3Style.css"> 
+    <link rel="stylesheet" href="../static/style.css">
 
     <!-- Apex Chart Javascript Library -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <!-- Chartist.js library -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+    <script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
 
 </head>
 
@@ -57,61 +64,113 @@
       <div class="col jumbotron text-center">
         <h1>St.Paul 99 - Project II</h1>
         <br>
-        <p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor
-          quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean
-          ultricies mi vitae est. Mauris placerat eleifend leo.</p>
+        <p>This website was created to present the work completed for Project II in the Data Analytics Coding Bootcamp offered through 
+            the University of Minnesota, College of Continuing and Professional Studies. This website presents traffic stop incidents
+             within the city of Saint Paul, Minnesota collected from 1/1/2017 to 12/31/2018. The original data set was collected by police officers and 
+             shared through a Socrata powered platform. For more information on the original raw data, please refer to
+            <a href="https://information.stpaul.gov/Public-Safety/Traffic-Stop-Dataset/kkd6-vvns" target="_blank"><u>Open Information Saint Paul</u></a>.
+          </p>
+          <p>
+            Currently this webpage draws the data from a Mongo database that is hosted by the user's computer.
+            The visualizations on this page present several interactive graphics to help the user navigate through the data set. 
+            The graphics leverage Chartist, Leaflet, MapBox, and Plotly javascript libraries. Bootstrap and Bootswatch libraries were used to format the website.
+          </p>
       </div>
     </div>
+
+    <div class="row">
+      <div class="col">
+        <table class="table">
+            <tr class="table-info">
+                <td style="vertical-align: middle">Group Traffic Stop Data by Different Categories:</td>
+                <td>
+                    <!-- placeholder for the drop-down/interactive plot-->
+                    <select id="selDataset" class="custom-select">
+                        <option value="race">Race</option>
+                        <option value="gender">Gender</option>
+                        <!-- <option value="DriverSearched">Driver Searched?</option> -->
+                        <!-- <option value="VehicleSearched">Vehicle Searched?</option> -->
+                    </select> 
+                </td>
+            </tr>
+        </table>
+      </div>
+    </div>
+
+      <div class="row">
+          <div class="col text-center">
+            <br><br> <!--breaks to put space between drop down and graphic title-->
+            <!-- title for plotly graph -->
+            <h3>Traffic Stop Count in Saint Paul</h3>
+          </div>
+      </div>
+
+      <div class ="row">
+        <div class="col">
+          <!-- Plotly graphic -->
+          <div id="plot">
+        </div>
+          </div>
+      </div>
+    <br>
+
+      <div class="row">
+        <div class="col text-center">
+          <!-- title for chartist graph -->
+          <h3>Total Traffic Stop Count per Month</h3>
+        </div>
+      </div>
+  
+
+      <div class ="row">
+        <div class="col">
+            <div id="chart2"></div>
+            <!-- we put the Chartist line graph here-->
+            <br> <br>
+            <!-- Adding a break to create space between charts and graphic titles -->
+        </div>
+      </div>
+
+      <!-- <div class ="row">
+          <div class="ct-chart" id ="chart2"></div>
+           we put the Chartist donut here
+      </div> -->
+
+      <!-- Row for header over map -->
+      <div class="row">
+          <div class="col text-center">
+            <!-- title for chartist graph -->
+            <h3>Map of Total Traffic Stops in Saint Paul</h3>
+          </div>
+        </div>
 
     <!-- Row to hold Leaflet Map -->
     <div class="row">
-
       <div class="col">
-            <div id="map" style="height: 1000px">
-                <!-- We append our chart here. -->
-                < >Remove Me</>
+            <div id="map" class="mapStyle">
+            <!-- styling of shape for map is in style.css file -->
+            <!-- We append our map here. -->
+            <br> 
+            <!-- Adding a break to create space between charts and graphic titles -->
             </div>
       </div>
     </div>
 
-    <!-- Row to hold plot/dashboard information -->
-    <div class="row">
-
-        <!-- Create a column for plot -->
-        <div class="col-8">
-          <div id="plot">
-                <!-- We append our plot here. -->
-          </div>
+  <div class = "row">
+      <!-- Row to hold footer -->
+      <div class="col">
+        <!-- Place in colum to have it fit the width of the page -->
+        <div class="text-center" id="text-center">
+          <hr>
+          <p>Special thanks to: </p>
+          <p>The Coding Boot Camp&copy;2020</p>
         </div>
-
-        <!-- Create a column for dashboard information -->
-        <div class="col-4">
-          <div class="row">
-            <!-- placeholder for the drop-down/interactive part of page -->
-            <select id="selDataset" onchange="graphChange(this.value)">
-                <option value="race">Race</option>
-                <option value="gender">Gender</option>
-                <option value="DriverSearched">Driver Searched?</option>
-                <option value="VehicleSearched">Vehicle Searched?</option>
-            </select> 
-          </div>
-          <div class="row">
-              <div id="dashboard">
-                  <!-- We append our dashboard here. -->
-              </div>
-          </div>
         </div>
     </div>
+  </div> <!--End of div container-->
 
-    <!-- Row to hold footer -->
-    <div class = "row"></div>
 
-            <!-- Footer-->
-            <div class="footer text-center">
-              <p>Special thanks to: </p>
-              <p>The Coding Boot Camp&copy;2020</p>
-            </div>
-    </div>
+
 
   <!-- Call the supporting javascript files -->
     <!-- D3 JavaScript -->
@@ -127,7 +186,9 @@
   <script type="text/javascript" src="../static/basemaps.js"></script>
   <script type="text/javascript" src="../static/dashboard.js"></script>
   <script type="text/javascript" src="../static/map.js"></script>
-  <script type="text/javascript" src="../static/plot.js"></script>
+  <!-- <script type="text/javascript" src="../static/plot.js"></script> -->
+  <script type="text/javascript" src="../static/plot2.js"></script>
+  <script type="text/javascript" src="../static/chartist.js"></script> 
 
 
 </body>

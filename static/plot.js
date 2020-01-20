@@ -1,53 +1,30 @@
 // NOTES: rendering using data from CSV in server folder
 
 // use data in csv file to generate plot to tinker
-d3.json("/trafficdata100").then(function(data, err) 
-{
-    // cut to error function if problem comes up in code
-    if (err) throw err;
 
-    // check if csv file loaded:
-    // console.log(data[0])
+function Init(){
 
-    function Init(){
+  console.log("Enter Intilization function:");
 
-      console.log("Enter Intilization function:");
+  
+  var selectOption = d3.select("#selDataset").property('value');
 
-      var selectOption = d3.select("#selDataset").property("value")
-      // console.log(selectOption)
+  graphChange();
+}
 
-      graphChange(selectOption);
+// On change to the DOM, call graphChange
+d3.selectAll("#selDataset").on("change", graphChange);
 
-    }
+function graphChange(){
 
-    function graphChange(selectOption){
-      
-      // create a blank chart to load on the page. Update at the end of function
-      var options = {
-        chart: {
-            height: 350,
-            type: 'bar',
-        },
-        dataLabels: {
-            enabled: false
-        },
-        series: [],
-        title: {
-            text: 'Traffic Stop Stacked Bar Graph',
-        },
-        noData: {
-          text: 'Loading...'
-        }
-      }
-      
-      var chart = new ApexCharts(
-        document.querySelector("#plot"),
-        options
-      );
-      
-      chart.render();
-
-
+  var plotArea = d3.select('#plot')
+  if (!plotArea.empty()) {
+    plotArea.remove();
+    console.log ('Removed plot')
+  }
+  var selectOption = d3.select("#selDataset").property('value');
+  console.log('selectOption ', selectOption);
+  
 
       // Call the data set in json format
       d3.json("/trafficdata100").then(function(data, err)
@@ -61,17 +38,17 @@ d3.json("/trafficdata100").then(function(data, err)
         // convert the id taken from the select option event handler to corresponding key in the dataset
         // option is how the data will be filtered for the graph
         if (selectOption == "race"){
-          var option = "Race"
-          console.log("Race selected")
+          var option = "Race";
+        //  console.log("Race selected")
         } else if (selectOption =="gender"){
-          var option = "Gender"
-          console.log("Gender selected")
+          var option = "Gender";
+        //  console.log("Gender selected")
         } else if (selectOption =="DriverSearched"){
-          var option = "DriverSearched"
-          console.log("Driver searched selected")
+          var option = "DriverSearched";
+         // console.log("Driver searched selected")
         } else if (selectOption =="VehicleSearched"){
-          var option ="VehicleSearched"
-          console.log("Vehicle searched selected")
+          var option ="VehicleSearched";
+        //  console.log("Vehicle searched selected")
         }
         // -------------------------------------------------
         // leveraged code to do groupby of traffic crime data by reason of traffic stop
@@ -150,79 +127,84 @@ d3.json("/trafficdata100").then(function(data, err)
           categories = Object.keys(EquipementGroupby);
           EquipmentArray = Object.values(EquipementGroupby);
           console.log(categories);
+          console.log('equip', EquipmentArray);
 
           InvestigateArray = Object.values(InvestigateGroupby);
           MovingArray = Object.values(MovingGroupby);
           CallArray = Object.values(CallGroupby);
 
-
-      // APEX code for bar graph to update 
-        chart.updateOptions({
-            series: [{
-              name: 'Equipment Violation',
-              data: EquipmentArray
-            }, {
-              name: 'Investigative Stop',
-              data: InvestigateArray
-            }, {
-              name: 'Moving Violation',
-              data: MovingArray
-            }, {
-              name: '911 Call / Citizen Reported',
-              data: CallArray
-            }],
-            chart: {
-              type: 'bar',
-              // height: 450,
-              // width: 500,
-              stacked: true,
-              toolbar: {
-                show: true
-              },
-              zoom: {
-                enabled: true
-              }
-            },
-            responsive: [{
-              breakpoint: 480,
-              options: {
-                legend: {
-                  position: 'bottom',
-                  offsetX: -10,
-                  offsetY: 0
-                }
-              }
-            }],
-            dataLabels: {
-              enabled: false
-            },
-            plotOptions: {
-              bar: {
-                horizontal: false,
-              },
-            },
-            xaxis: {
-              categories: categories,
-            },
+          console.log('Inv', InvestigateArray); 
+          console.log('Moving', MovingArray);
+          console.log('Call', CallArray);
+      // APEX code for bar graph
+      var options = {
+        series: [{
+          name: 'Equipment Violation',
+          data: EquipmentArray
+        }, {
+          name: 'Investigative Stop',
+          data: InvestigateArray
+        }, {
+          name: 'Moving Violation',
+          data: MovingArray
+        }],
+        // }, {
+        //  name: '911 Call / Citizen Reported',
+        //  data: CallArray
+        // }],
+        chart: {
+          type: 'bar',
+          // height: 450,
+          // width: 500,
+          stacked: true,
+          toolbar: {
+            show: true
+          },
+          zoom: {
+            enabled: true
+          }
+        },
+        responsive: [{
+          breakpoint: 480,
+          options: {
             legend: {
-              position: 'right',
-              offsetY: 20
-            },
-            fill: {
-              opacity: 1
-            },
-            yaxis: {
-              title: {
-                text: 'Count'
-              }
+              position: 'bottom',
+              offsetX: -10,
+              offsetY: 0
             }
-          });
+          }
+        }],
+        dataLabels: {
+          enabled: false
+        },
+        plotOptions: {
+          bar: {
+            horizontal: false,
+          },
+        },
+        xaxis: {
+          categories: categories,
+        },
+        legend: {
+          position: 'right',
+          offsetY: 20
+        },
+        fill: {
+          opacity: 1
+        },
+        yaxis: {
+          title: {
+            text: 'Count'
+          }
+        }
+      };
+ 
+          var chart = new ApexCharts(document.querySelector("#plot"), options);
+          chart.render();
 
       }).catch(function(error) {
         console.log(error);
       });
-
     }
-
-    Init();
-  });
+   Init();
+  
