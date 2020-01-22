@@ -54,7 +54,10 @@
    height: 700px;
    width: 100%
  }
-
+.legend {
+  text-align:center;
+  list-style-type:none
+}
 
  html {
    font-family: sans-serif;
@@ -89,11 +92,17 @@
    overflow: visible;
  }
  
- h1, h2, h3, h4, h5, h6 {
+ h1, h2, h3, h4, h6 {
    margin-top: 0;
    margin-bottom: 0.5rem;
  }
- 
+
+ /* create a unique one for the map that leverages h5 */
+ h5 {
+  background-color : white;
+  opacity : 0.7
+ }
+
  p {
    margin-top: 0;
    margin-bottom: 1rem;
@@ -10577,11 +10586,12 @@
    letter-spacing: 1px;
  }
  
- h1, h2, h3, h4, h5, h6 {
+ h1, h2, h3, h4, h5, h6{
    text-transform: uppercase;
    letter-spacing: 3px;
  }
- 
+
+
  .text-secondary {
    color: #55595c !important;
  }
