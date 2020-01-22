@@ -3,6 +3,7 @@
 /******************************************************* */
 // Grab the grid line data
 const stPaulPrecincts = "static/Saint_Paul_Police_Grid.geojson";
+const stPaulDistricts = "static/District_Council_Shapefile_Map.geojson";
 
 // Grab the traffic data
 const trafficdataPath = "/trafficdata";
@@ -45,27 +46,29 @@ function calculateStopsByGrid(data)
 // Start Map Creation
 /****************************************************** */
 
-// Create map object
-var stPaulMap = L.map("map", {
-    center: startLocation,
-    zoom: 12,
-    layers: [baseMaps.Outdoors]
-  });
-
-// Create a marker cluster group and pin later
+// Create a marker cluster group and pin layer
 var markers = L.markerClusterGroup();
-var pinLayer = L.layerGroup().addTo(stPaulMap);
+var pinLayer = L.layerGroup();
 
 // Create a layer for grid line data
-var precinctLayer = L.layerGroup().addTo(stPaulMap);
-var gridLayer = L.layerGroup().addTo(stPaulMap);
+var precinctLayer = L.layerGroup();
+var districtLayer = L.layerGroup();
+var gridLayer = L.layerGroup();
 
 // Create a dictionary of overlays
 var overlayMaps = {
     "Precincts": precinctLayer,
     "Pins": pinLayer,
-    "Choropleth": gridLayer
+    "Choropleth": gridLayer,
+    "Districts": districtLayer
 };
+
+// Create map object
+var stPaulMap = L.map("map", {
+    center: startLocation,
+    zoom: 12,
+    layers: [baseMaps.Outdoors, overlayMaps.Choropleth]
+  });
 
 // Pass our map layers into our layer control
 // Add the layer control to the map
@@ -166,15 +169,14 @@ d3.json(trafficdataPath).then(function(response, err)
                 .bindPopup("<div><b>" /*+ "Reason: "*/ +  response[i].Reason + "</b></div><hr>"
                     + "<div>" + response[i].Race + " " + response[i].Gender + "</div>"
                     + "<div>Ticket Issued: " +  response[i].Citation + "</div>"
-                    + "<div>Driver and/or Vehicle Searched  " + searched + "</div>"
-                    + "<div>Date  " + response[i].Date + "</div>"
+                    + "<div>Driver and/or Vehicle Searched:  " + searched + "</div>"
+                    + "<div>Date:  " + response[i].Date + "</div>"
                     + "<div>Grid Number:  " + response[i].Grid + "</div>"
             ));
         }
     }
 
-    // Add our marker cluster layer to the map   
-    stPaulMap.addLayer(markers);
+    // Add our marker cluster layer to the map  
     markers.addTo(pinLayer);
 
     // Grabbing our GeoJSON data..
@@ -238,7 +240,7 @@ d3.json(trafficdataPath).then(function(response, err)
             }
         }).addTo(precinctLayer);
 
-        // Set up the legend
+        // Set up the Choropleth legend
         var legend = L.control({ position: "bottomright" });
         legend.onAdd = function() {
             var div = L.DomUtil.create("div", "info legend");
@@ -247,9 +249,14 @@ d3.json(trafficdataPath).then(function(response, err)
             var labels = [];
 
             // Add min & max
-            var legendInfo = "<h6>Traffic Stops</h6>";
+            var legendInfo = "<div></div>";
 
             div.innerHTML = legendInfo;
+
+            labels.push("<li style=" 
+            + "list-style-type:none"
+            + ";text-align:center;"
+            + "\">" + "<h5><font color=\"black\">" + "Choropleth" + "</font></h5></li>");
 
             limits.forEach(function(limit, index) {
             labels.push("<li style=\"background-color: " + colors[index] 
@@ -264,5 +271,92 @@ d3.json(trafficdataPath).then(function(response, err)
 
         // Adding legend to the map
         legend.addTo(stPaulMap);
+
+        // Set up the pin legend
+        var pinLegend = L.control({ position: "bottomleft" });
+        pinLegend.onAdd = function() {
+            var div = L.DomUtil.create("div", "pin legend");
+            var pinLabels = [];
+
+            // Add min & max
+            var legendInfoPin = "<div></div>";
+
+            div.innerHTML = legendInfoPin;
+
+            // Blue: 1371BA
+            // Orange: F18C20
+            // Pink: C0539E
+            // Purple: 5C396D
+            // Green: 06924A
+            // yellow: F4BB39 
+
+            pinLabels.push("<li style=" 
+                + "list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<h5><font color=\"black\">" + "Icon Legend" + "</font></h5></li>");
+            pinLabels.push("<li style=\"background-color: " + "#C0539E" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"white\">" + "White" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "#1371BA" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"white\">" + "Black" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "#5C396D" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"white\">" + "Latino" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "#06924A" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"white\">" + "Asian" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "#F18C20" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"white\">" + "Other" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "#F4BB39" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"black\">" + "Native American" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "white" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"black\">" + "<span class=\"ion-male\">  Male</span>" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "white" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"black\">" + "<span class=\"ion-female\">  Female</span>" + "</font></li>");
+            pinLabels.push("<li style=\"background-color: " + "white" 
+                + ";list-style-type:none"
+                + ";text-align:center;"
+                + "\">" + "<font color=\"black\">" + "<span class=\"ion-alert\">  Searched</span>" + "</font></li>");
+
+
+            div.innerHTML += "<ul>" + pinLabels.join("") + "</ul>";
+            return div;
+        };
+
+        // Adding legend to the map
+        pinLegend.addTo(stPaulMap);
     });
+});
+
+d3.json(stPaulDistricts).then(function(data, err) 
+{
+    // cut to error function if problem comes up in code
+    if (err) throw err;
+
+    // Creating a geoJSON layer with the retrieved data
+    L.geoJson(data, 
+    {
+        // Style each feature (in this case a neighborhood)
+        style: function(feature) 
+        {
+        return {
+            color: "green",
+            fillOpacity: 0.0,
+            weight: 2.0
+        };
+        }
+    }).addTo(districtLayer);
 });
