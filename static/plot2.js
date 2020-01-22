@@ -122,12 +122,21 @@ function newPlotly() {
                   barmode: 'stack',
                     xaxis: {
                       domain: [0, 0.50],
-                      anchor: 'x1', 
-                      title: 'Reason for Stops'
+                      anchor: 'x1',
+                      automargin: true, 
+                      title: {
+                        text: "Reason for Stops",
+                        standoff: 30
+                      } 
                     },
                     xaxis2: {
                       domain: [0.50, 1.0],
-                      anchor: 'x2', title: 'Driver/Vehicle Searched'
+                      anchor: 'x2',
+                      automargin: true, 
+                      title: {
+                        text: "Driver/Vehicle Searched",
+                        standoff: 30
+                      } 
                     }
             };
 
@@ -236,19 +245,28 @@ function updatePlotly() {
              plotData =[trace1, trace2, trace3, trace4, trace5, trace6];
    
              var layout = {
-                //  height: 600,
-                //  width: 800,
-                  barmode: 'stack',
-                    xaxis: {
-                      domain: [0, 0.50],
-                      anchor: 'x1', 
-                      title: 'Reason for Stops'
-                    },
-                    xaxis2: {
-                      domain: [0.50, 1.0],
-                      anchor: 'x2', title: 'Driver/Vehicle Searched'
-                    }
-            };
+              //  height: 600,
+              //  width: 800,
+                barmode: 'stack',
+                  xaxis: {
+                    domain: [0, 0.50],
+                    anchor: 'x1', 
+                    automargin: true,
+                    title: {
+                      text: "Reason for Stops",
+                      standoff: 30
+                    } 
+                  },
+                  xaxis2: {
+                    domain: [0.50, 1.0],
+                    anchor: 'x2', 
+                    automargin: true,
+                    title: {
+                      text: "Driver/Vehicle Searched",
+                      standoff: 30
+                    } 
+                  }
+          };
             // Call function to update the chart
             Plotly.newPlot("plot", plotData, layout,{responsive:true});
               
