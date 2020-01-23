@@ -10,12 +10,12 @@ Prequisites:
 
 Steps:
 1. Clone the repository on your desktop
-2. create a config.js javascript file in the static folder and include the following line :  const API_KEY = "<include the API key that you'd obtained for Leaflet">
+2. Create a config.js javascript file in the static folder and include the following line :  const API_KEY = "<include the API key that you'd obtained for Leaflet">
 
 3. Navigate to the folder that contains insert_data.py and launch GitBash (Windows) or Terminal (Mac).
-4. type source activate PythonWebMongo
-5. type python insert_data.py (this will create a database and inserts the data from the data folder).  Note: be sure that you see sample data is printed on your terminal session  
-6. type export FLASK_APP=app.py
+4. Type source activate PythonWebMongo
+5. Type python insert_data.py (this will create a database and inserts the data from the data folder).  Note: be sure that you see sample data is printed on your terminal session  
+6. Type export FLASK_APP=app.py
 7. Type flask run 
 Observe that FLASK server starts and tells you which port it's running
 8. Open your Chrome browser and enter this address:  http://127.0.0.1.5000.
