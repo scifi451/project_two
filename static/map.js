@@ -8,28 +8,36 @@ const stPaulDistricts = "static/District_Council_Shapefile_Map.geojson";
 // Grab the traffic data
 const trafficdataPath = "/trafficdata";
 const startLocation = [44.95, -93.09];
-var choroLegend, whiteLegend, blackLegend, asianLegend,
- latinoLegend, nativeAmericanLegend, otherLegend,
- maleLegend, femaleLegend, searchedLegend;
- var choroGeojson, whiteGeojson, blackGeojson, asianGeojson,
- latinoGeojson, nativeAmericanGeojson, otherGeojson,
- maleGeojson, femaleGeojson, searchedGeojson;
+
+// define the overlays
+var overlays = {
+    "TrafficStops":     {"name" : "TrafficStops","label" : "Traffic Stops", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "White":            {"name" : "White", "label" : "Race: White", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Black":            {"name" : "Black", "label" : "Race: Black", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Asian":            {"name" : "Asian", "label" : "Race: Asian", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Latino":           {"name" : "Latino", "label" : "Race: Latino", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "NativeAmerican":   {"name" : "NativeAmerican", "label" : "Race: Native American", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Other":            {"name" : "Other", "label" : "Race: Other", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Female":           {"name" : "Female", "label" : "Gender: Female", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Male":             {"name" : "Male", "label" : "Gender: Male", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Searched":         {"name" : "Searched", "label" : "Searched", "geojson": "", "legend": L.control({ position: "topleft" })},
+    "Pins":             {"name" : "Pins", "label" : "Traffic Stop Locations", "geojson": "", "legend": L.control({ position: "bottomleft" })}
+};
 
 // Variable for tracking number of stops within a grid number
 // will need to add this count to the geo json for the choropleth
 var countsByGrid = {
-    "Stops": {},
+    "TrafficStops": {},
     "White": {},
     "Black": {},
     "Asian": {},
     "Latino": {},
     "NativeAmerican": {},
     "Other": {},
-    "Male": {},
     "Female": {},
+    "Male": {},
     "Searched": {}
 };
-var geojson;
 
 /******************************************************* */
 // Define functions
@@ -79,10 +87,10 @@ function calculateStopsByGrid(data)
         // Convert to Int to remove .0 then back to string
         // and increment or start count accordingly
         var currentGrid = parseInt(data[i].Grid).toString();
-        if (currentGrid in countsByGrid.Stops)
-            countsByGrid.Stops[currentGrid] += 1;
+        if (currentGrid in countsByGrid.TrafficStops)
+            countsByGrid.TrafficStops[currentGrid] += 1;
         else
-            countsByGrid.Stops[currentGrid] = 1;
+            countsByGrid.TrafficStops[currentGrid] = 1;
 
         // increment for race
         switch (data[i].Race)
@@ -169,68 +177,131 @@ function calculateStopsByGrid(data)
     }
 }
 
-/****************************************************** */
-// Start Map Creation
-/****************************************************** */
-
-// Create a marker cluster group and pin layer
-var markers = L.markerClusterGroup();
-var pinLayer = L.layerGroup();
-
-// Create a layer for grid line data
-var precinctLayer = L.layerGroup();
-var districtLayer = L.layerGroup();
-var gridLayer = L.layerGroup();
-var whiteLayer = L.layerGroup();
-var blackLayer = L.layerGroup();
-var asianLayer = L.layerGroup();
-var latinoLayer = L.layerGroup();
-var nativeAmericanLayer = L.layerGroup();
-var otherLayer = L.layerGroup();
-var femaleLayer = L.layerGroup();
-var maleLayer = L.layerGroup();
-var searchedLayer = L.layerGroup();
-
-// Create a dictionary of overlays
-var overlayMaps = {
-    "Precincts": precinctLayer,
-    "Pins": pinLayer,
-    "Choropleth": gridLayer,
-    "Districts": districtLayer,
-    "White": whiteLayer,
-    "Black": blackLayer,
-    "Asian": asianLayer,
-    "Latino": latinoLayer,
-    "Native American": nativeAmericanLayer,
-    "Other": otherLayer,
-    "Female": femaleLayer,
-    "Male": maleLayer,
-    "Searched": searchedLayer
-};
-
-// Create map object
-var stPaulMap = L.map("map", {
-    center: startLocation,
-    zoom: 12,
-    layers: [baseMaps.Outdoors, overlayMaps.Choropleth]
-  });
-
-// Pass our map layers into our layer control
-// Add the layer control to the map
-L.control.layers(baseMaps, overlayMaps).addTo(stPaulMap); 
-
-/***************************************************************** */
-// Use d3 to do the magic
-/***************************************************************** */
-
-// Grab the data with d3
-d3.json(trafficdataPath).then(function(response, err) 
+// Add properties and counts to the geojson file
+function addCountsToGeojson(data)
 {
-    // cut to error function if problem comes up in code
-    if (err) throw err;
-    
-    calculateStopsByGrid(response);
+    // Loop through the geojson file to add the property stop count
+    for (c=0; c<data.features.length; c++)
+    {
+        // Create temp variables
+        let gridNum = data.features[c].properties.gridnum;
+        let properties = data.features[c].properties;
 
+        // NOTE:  The geojson file has an error in gridnum that we are correcting here
+        if (gridNum === "367")
+            gridNum = "267";
+
+        // Check first if the grid is valid, if so assign the count otherwise set to 0
+        properties.TrafficStops = (gridNum in countsByGrid.TrafficStops) ? countsByGrid.TrafficStops[gridNum] : 0;
+        properties.White = (gridNum in countsByGrid.White) ? countsByGrid.White[gridNum] : 0;
+        properties.Black = (gridNum in countsByGrid.Black) ? countsByGrid.Black[gridNum] : 0;
+        properties.Asian = (gridNum in countsByGrid.Asian) ? countsByGrid.Asian[gridNum] : 0;
+        properties.Latino = (gridNum in countsByGrid.Latino) ? countsByGrid.Latino[gridNum] : 0;
+        properties.NativeAmerican = (gridNum in countsByGrid.NativeAmerican) ? countsByGrid.NativeAmerican[gridNum] : 0;
+        properties.Other = (gridNum in countsByGrid.Other) ? countsByGrid.Other[gridNum] : 0;
+        properties.Female = (gridNum in countsByGrid.Female) ? countsByGrid.Female[gridNum] : 0;
+        properties.Male = (gridNum in countsByGrid.Male) ? countsByGrid.Male[gridNum] : 0;
+        properties.Searched = (gridNum in countsByGrid.Searched) ? countsByGrid.Searched[gridNum] : 0;
+    }
+}
+
+// Function to create a choropleth
+function createChoropleth(currentLayer, data)
+{
+    return L.choropleth(data, 
+    {
+        // Define what  property in the features to use
+        valueProperty: currentLayer.name,
+
+        // Set color scale
+        scale: ["#E2E7F5", "#071696"],
+
+        // Number of breaks in step range
+        steps: 10,
+
+        // q for quartile, e for equidistant, k for k-means
+        mode: "q",
+        style: {
+            // Border color
+            color: "#fff",
+            weight: 1,
+            fillOpacity: 0.8
+        },
+
+        // Binding a pop-up to each layer
+        onEachFeature: function(feature, layer) {
+            layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
+            + feature.properties.gridnum + "<div>" + currentLayer.label + ":  " + feature.properties[currentLayer.name] + "</div>"
+            + "<div>" + "Total Stops in Grid:" + ":  " + feature.properties.TrafficStops + "</div>"
+            + "<div>Percent of Grid = " + (100 * feature.properties[currentLayer.name] / feature.properties.TrafficStops).toFixed(0) + "\%</div>");
+        }
+    }).addTo(overlayMaps[currentLayer.name]);
+}
+
+
+// Function to create a legend
+function createLegend(geojson, label, legend) 
+{
+    legend.onAdd = function() {
+        var div = L.DomUtil.create("div", "info legend");
+        var limits = geojson.options.limits;
+        var colors = geojson.options.colors;
+        var labels = [];
+
+        // Add min & max
+        var legendInfo = "<div></div>";
+
+        div.innerHTML = legendInfo;
+
+        labels.push("<li style=" 
+        + "list-style-type:none"
+        + ";text-align:center;"
+        + "\">" + "<h5><font color=\"black\">" + label + "</font></h5></li>");
+
+        limits.forEach(function(limit, index) {
+        labels.push("<li style=\"background-color: " + colors[index] 
+            + ";list-style-type:none"
+            + ";text-align:center;"
+            + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
+        });
+
+        div.innerHTML += "<ul>" + labels.join("") + "</ul>";
+        return div;
+    };
+}
+
+// Function to create an icon
+function createIcon(type, iColor, mColor, form)
+{
+    return L.ExtraMarkers.icon({
+        icon: type,
+        iconColor: iColor,
+        markerColor: mColor,
+        shape: form
+    }); 
+}
+
+// Function to create Choropleth overlays
+function createChoroplethOverlays(data)
+{
+    for (var key in overlays)
+    {
+        // NOTE:  The Pins Layer has its own legend
+        if (key != "Pins")
+        {
+            let currentLayer = overlays[key];
+            currentLayer.geojson = createChoropleth(currentLayer, data);
+            createLegend(currentLayer.geojson, currentLayer.label, currentLayer.legend);
+        }
+    }
+}
+
+// Function to create the pins for each stop
+function createPins(response)
+{
+    // Create a marker cluster group
+    var markers = L.markerClusterGroup();
+    
     // Loop through data
     for (var i = 0; i < response.length; i++) 
     {
@@ -260,55 +331,14 @@ d3.json(trafficdataPath).then(function(response, err)
 
             switch (response[i].Race)
             {
-                case ("White"): selectedIcon = L.ExtraMarkers.icon({
-                    icon: iconType,
-                    iconColor: iconColor,
-                    markerColor: "pink",
-                    shape: "square"
-                }); 
-                break;
-
-                case ("Black"): selectedIcon = L.ExtraMarkers.icon({
-                    icon: iconType,
-                    iconColor: iconColor,
-                    markerColor: "blue",
-                    shape: "square"
-                }); 
-                break;
-
-                case ("Latino"): selectedIcon = L.ExtraMarkers.icon({
-                    icon: iconType,
-                    iconColor: iconColor,
-                    markerColor: "purple",
-                    shape: "square"
-                }); 
-                break;
-
-                case ("Native American"): selectedIcon = L.ExtraMarkers.icon({
-                    icon: iconType,
-                    iconColor: iconColor,
-                    markerColor: "yellow",
-                    shape: "square"
-                }); 
-                break;
-
-                case ("Asian"): selectedIcon = L.ExtraMarkers.icon({
-                    icon: iconType,
-                    iconColor: iconColor,
-                    markerColor: "green",
-                    shape: "square"
-                }); 
-                break;
-
-                default: selectedIcon = L.ExtraMarkers.icon({
-                    icon: iconType,
-                    iconColor: iconColor,
-                    markerColor: "orange",
-                    shape: "square"
-                }); 
-                break;
+                case ("White"): selectedIcon = createIcon(iconType, iconColor, "pink", "square"); break;
+                case ("Black"): selectedIcon = createIcon(iconType, iconColor, "blue", "square"); break;
+                case ("Latino"): selectedIcon = createIcon(iconType, iconColor, "purple", "square"); break;
+                case ("Native American"): selectedIcon = createIcon(iconType, iconColor, "yellow", "square"); break;
+                case ("Asian"): selectedIcon = createIcon(iconType, iconColor, "green", "square"); break;
+                default: selectedIcon = createIcon(iconType, iconColor, "orange", "square"); break;
             }
- 
+    
             // Now add the marker at the proper location and create the popup
             markers.addLayer(L.marker([location.lat, location.lon], {icon: selectedIcon})
                 .bindPopup("<div><b>" /*+ "Reason: "*/ +  response[i].Reason + "</b></div><hr>"
@@ -322,7 +352,111 @@ d3.json(trafficdataPath).then(function(response, err)
     }
 
     // Add our marker cluster layer to the map  
-    markers.addTo(pinLayer);
+    markers.addTo(overlayMaps.Pins);
+}
+
+// Create Pin Legend
+function createPinLegend(legend)
+{
+    legend.onAdd = function() 
+    {
+        var div = L.DomUtil.create("div", "pin legend");
+        var pinLabels = [];
+
+        // Add min & max
+        var legendInfoPin = "<div></div>";
+
+        div.innerHTML = legendInfoPin;
+
+        // Blue: 1371BA, Orange: F18C20, Pink: C0539E, Purple: 5C396D, Green: 06924A, Yellow: F4BB39 
+        let liStyle1 = "<li style=\"background-color: ";
+        let liStyle2a = ";list-style-type:none;text-align:center;\"><font color=\"white\">";
+        let liStyle2b = "white;list-style-type:none;text-align:center;\"><font color=\"black\"><span class=\"ion-male\">";
+        let liStyle3a = "</font></li>";
+        let liStyle3b = "</span></font></li>";
+
+        pinLabels.push("<li style=list-style-type:none;text-align:center;\">" + "<h5><font color=\"black\">Icon Legend</font></h5></li>");
+        pinLabels.push(liStyle1 + "#C0539E" + liStyle2a + "White" + liStyle3a);
+        pinLabels.push(liStyle1 + "#1371BA" + liStyle2a + "Black" + liStyle3a);
+        pinLabels.push(liStyle1 + "#5C396D" + liStyle2a + "Latino" + liStyle3a);
+        pinLabels.push(liStyle1 + "#06924A" + liStyle2a + "Asian" + liStyle3a);
+        pinLabels.push(liStyle1 + "#F18C20" + liStyle2a + "Other" + liStyle3a);
+        pinLabels.push(liStyle1 + "#F4BB39" + liStyle2a + "Native American" + liStyle3a);
+
+        pinLabels.push(liStyle1 + liStyle2b + "   Male" + liStyle3b);
+        pinLabels.push(liStyle1 + liStyle2b + "   Female" + liStyle3b);
+        pinLabels.push(liStyle1 + liStyle2b + "   Searched" + liStyle3b);
+
+        div.innerHTML += "<ul>" + pinLabels.join("") + "</ul>";
+        return div;
+    };
+}
+
+// Function to create the geojson outline of regions
+function createGeojsonOverlay(data, overlay, outlineColor)
+{
+    L.geoJson(data, 
+    {
+        // Style each feature (in this case a neighborhood)
+        style: function(feature) 
+        {
+        return {
+            color: outlineColor,
+            fillOpacity: 0.0,
+            weight: 2.0
+        };
+        }
+    }).addTo(overlay);
+}
+
+/****************************************************** */
+// Start Map Creation
+/****************************************************** */
+
+// Create a dictionary of overlays
+var overlayMaps = {
+    "Precincts":        L.layerGroup(),
+    "Districts":        L.layerGroup(),
+    "Pins":             L.layerGroup(),
+    "TrafficStops":     L.layerGroup(),
+    "Districts":        L.layerGroup(),
+    "White":            L.layerGroup(),
+    "Black":            L.layerGroup(),
+    "Asian":            L.layerGroup(),
+    "Latino":           L.layerGroup(),
+    "NativeAmerican":   L.layerGroup(),
+    "Other":            L.layerGroup(),
+    "Female":           L.layerGroup(),
+    "Male":             L.layerGroup(),
+    "Searched":         L.layerGroup()
+};
+
+// Create map object
+var stPaulMap = L.map("map", {
+    center: startLocation,
+    zoom: 12,
+    layers: [baseMaps.Outdoors, overlayMaps.TrafficStops]
+  });
+
+// Pass our map layers into our layer control
+// Add the layer control to the map
+L.control.layers(baseMaps, overlayMaps).addTo(stPaulMap); 
+
+/***************************************************************** */
+// Use d3 to do the magic
+/***************************************************************** */
+
+// Grab the data with d3
+d3.json(trafficdataPath).then(function(response, err) 
+{
+    // cut to error function if problem comes up in code
+    if (err) throw err;
+    
+    // Calculate how many stops in each grid
+    calculateStopsByGrid(response);
+
+    // Create the pins that represent each stop
+    createPins(response);
 
     // Grabbing our GeoJSON data..
     d3.json(stPaulPrecincts).then(function(data, err) 
@@ -330,718 +464,21 @@ d3.json(trafficdataPath).then(function(response, err)
         // cut to error function if problem comes up in code
         if (err) throw err;
 
-        // Loop through the geojson file to add the property stop count
-        for (c=0; c<data.features.length; c++)
-        {
-            // NOTE:  The geojson file has an error in gridnum that we are correcting here
-            if (data.features[c].properties.gridnum === "367")
-                data.features[c].properties.gridnum = "267";
+        // For each Precinct Grid, add the filtered traffic stops
+        // IF the property does not exist, add it
+        addCountsToGeojson(data);
 
-            if (data.features[c].properties.gridnum in countsByGrid.Stops)
-                data.features[c].properties.stops = countsByGrid.Stops[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.stops = 0;
-            
-            if (data.features[c].properties.gridnum in countsByGrid.White)
-                data.features[c].properties.white = countsByGrid.White[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.white = 0;
+        // Create new Choropleth overlays
+        createChoroplethOverlays(data);
 
-            if (data.features[c].properties.gridnum in countsByGrid.Black)
-                data.features[c].properties.black = countsByGrid.Black[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.black = 0;
-
-            if (data.features[c].properties.gridnum in countsByGrid.Asian)
-                data.features[c].properties.asian = countsByGrid.Asian[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.asian = 0;
-
-            if (data.features[c].properties.gridnum in countsByGrid.Latino)
-                data.features[c].properties.latino = countsByGrid.Latino[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.latino = 0;
-
-            if (data.features[c].properties.gridnum in countsByGrid.NativeAmerican)
-                data.features[c].properties.nativeAmerican = countsByGrid.NativeAmerican[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.nativeAmerican = 0;
-
-            if (data.features[c].properties.gridnum in countsByGrid.Other)
-                data.features[c].properties.other = countsByGrid.Other[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.other = 0;
-
-            if (data.features[c].properties.gridnum in countsByGrid.Female)
-                data.features[c].properties.female = countsByGrid.Female[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.female = 0;
-
-            if (data.features[c].properties.gridnum in countsByGrid.Male)
-                data.features[c].properties.male = countsByGrid.Male[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.male = 0;
-
-            if (data.features[c].properties.gridnum in countsByGrid.Searched)
-                data.features[c].properties.searched = countsByGrid.Searched[data.features[c].properties.gridnum];
-            else 
-                data.features[c].properties.searched = 0;
-        }
-
-        // Create a new choropleth layer
-        // L.geoJson(data, {style: style(data.features)}).addTo(gridLayer);
-        choroGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "stops",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops:  " + feature.properties.stops + "</div>");
-            }
-        }).addTo(gridLayer);
-
-        whiteGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "white",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for White:  " + feature.properties.white + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.white / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(whiteLayer);
-
-        blackGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "black",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Black:  " + feature.properties.black + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.black / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(blackLayer);
-
-        asianGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "asian",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Asian:  " + feature.properties.asian + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.asian / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(asianLayer);
-
-        latinoGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "latino",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Latino:  " + feature.properties.latino + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.latino / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(latinoLayer);
-
-        nativeAmericanGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "nativeAmerican",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Native American:  " + feature.properties.nativeAmerican + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.nativeAmerican / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(nativeAmericanLayer);
-
-        otherGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "other",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Other:  " + feature.properties.other + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.other / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(otherLayer);
-
-
-        femaleGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "female",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Female:  " + feature.properties.female + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.female / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(femaleLayer);
-
-        maleGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "male",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Male:  " + feature.properties.male + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.male / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(maleLayer);
-
-        searchedGeojson = L.choropleth(data, 
-        {
-            // Define what  property in the features to use
-            valueProperty: "searched",
-
-            // Set color scale
-            scale: ["#E2E7F5", "#071696"],
-
-            // Number of breaks in step range
-            steps: 10,
-
-            // q for quartile, e for equidistant, k for k-means
-            mode: "q",
-            style: {
-                // Border color
-                color: "#fff",
-                weight: 1,
-                fillOpacity: 0.8
-            },
-
-            // Binding a pop-up to each layer
-            onEachFeature: function(feature, layer) {
-                layer.bindPopup("<h6>District: " + feature.properties.dist + "</h6><hr>Grid Number:  " 
-                + feature.properties.gridnum + "<div>Total Stops for Searched:  " + feature.properties.searched + "</div>"
-                + "<div>Percent of Grid = " + (100 * feature.properties.searched / feature.properties.stops).toFixed(0) + "\%</div>");
-            }
-        }).addTo(searchedLayer);
+        // Add the Traffic Stop totals as the default legend
+        overlays.TrafficStops.legend.addTo(stPaulMap);
 
         // Creating a geoJSON layer with the retrieved data
-        L.geoJson(data, 
-        {
-            // Style each feature (in this case a neighborhood)
-            style: function(feature) 
-            {
-            return {
-                color: "orange",
-                fillOpacity: 0.0,
-                weight: 1.5
-            };
-            }
-        }).addTo(precinctLayer);
-
-        // Set up the Choropleth legend
-        choroLegend = L.control({ position: "topleft" });
-        choroLegend.onAdd = function() {
-            var div = L.DomUtil.create("div", "info legend");
-            var limits = choroGeojson.options.limits;
-            var colors = choroGeojson.options.colors;
-            var labels = [];
-
-            // Add min & max
-            var legendInfo = "<div></div>";
-
-            div.innerHTML = legendInfo;
-
-            labels.push("<li style=" 
-            + "list-style-type:none"
-            + ";text-align:center;"
-            + "\">" + "<h5><font color=\"black\">" + "Choropleth" + "</font></h5></li>");
-
-            limits.forEach(function(limit, index) {
-            labels.push("<li style=\"background-color: " + colors[index] 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-            });
-
-            div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-            return div;
-        };
-        // Adding legend to the map - this is the default
-        choroLegend.addTo(stPaulMap);
-
-        // Set up the Choropleth legend
-        whiteLegend = L.control({ position: "topleft" });
-        whiteLegend.onAdd = function() {
-            var div = L.DomUtil.create("div", "info legend");
-            var limits = whiteGeojson.options.limits;
-            var colors = whiteGeojson.options.colors;
-            var labels = [];
-
-            // Add min & max
-            var legendInfo = "<div></div>";
-
-            div.innerHTML = legendInfo;
-
-            labels.push("<li style=" 
-            + "list-style-type:none"
-            + ";text-align:center;"
-            + "\">" + "<h5><font color=\"black\">" + "White" + "</font></h5></li>");
-
-            limits.forEach(function(limit, index) {
-            labels.push("<li style=\"background-color: " + colors[index] 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-            });
-
-            div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-            return div;
-        };
-
-        // Set up the Choropleth legend
-        blackLegend = L.control({ position: "topleft" });
-        blackLegend.onAdd = function() {
-            var div = L.DomUtil.create("div", "info legend");
-            var limits = blackGeojson.options.limits;
-            var colors = blackGeojson.options.colors;
-            var labels = [];
-
-            // Add min & max
-            var legendInfo = "<div></div>";
-
-            div.innerHTML = legendInfo;
-
-            labels.push("<li style=" 
-            + "list-style-type:none"
-            + ";text-align:center;"
-            + "\">" + "<h5><font color=\"black\">" + "Black" + "</font></h5></li>");
-
-            limits.forEach(function(limit, index) {
-            labels.push("<li style=\"background-color: " + colors[index] 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-            });
-
-            div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-            return div;
-        };
-
-       // Set up the Choropleth legend
-       asianLegend = L.control({ position: "topleft" });
-       asianLegend.onAdd = function() {
-           var div = L.DomUtil.create("div", "info legend");
-           var limits = asianGeojson.options.limits;
-           var colors = asianGeojson.options.colors;
-           var labels = [];
-
-           // Add min & max
-           var legendInfo = "<div></div>";
-
-           div.innerHTML = legendInfo;
-
-           labels.push("<li style=" 
-           + "list-style-type:none"
-           + ";text-align:center;"
-           + "\">" + "<h5><font color=\"black\">" + "Asian" + "</font></h5></li>");
-
-           limits.forEach(function(limit, index) {
-           labels.push("<li style=\"background-color: " + colors[index] 
-               + ";list-style-type:none"
-               + ";text-align:center;"
-               + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-           });
-
-           div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-           return div;
-       };
-
-       // Set up the Choropleth legend
-       latinoLegend = L.control({ position: "topleft" });
-       latinoLegend.onAdd = function() {
-           var div = L.DomUtil.create("div", "info legend");
-           var limits = latinoGeojson.options.limits;
-           var colors = latinoGeojson.options.colors;
-           var labels = [];
-
-           // Add min & max
-           var legendInfo = "<div></div>";
-
-           div.innerHTML = legendInfo;
-
-           labels.push("<li style=" 
-           + "list-style-type:none"
-           + ";text-align:center;"
-           + "\">" + "<h5><font color=\"black\">" + "Latino" + "</font></h5></li>");
-
-           limits.forEach(function(limit, index) {
-           labels.push("<li style=\"background-color: " + colors[index] 
-               + ";list-style-type:none"
-               + ";text-align:center;"
-               + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-           });
-
-           div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-           return div;
-       };       
-
-       // Set up the Choropleth legend
-       nativeAmericanLegend = L.control({ position: "topleft" });
-       nativeAmericanLegend.onAdd = function() {
-           var div = L.DomUtil.create("div", "info legend");
-           var limits = nativeAmericanGeojson.options.limits;
-           var colors = nativeAmericanGeojson.options.colors;
-           var labels = [];
-
-           // Add min & max
-           var legendInfo = "<div></div>";
-
-           div.innerHTML = legendInfo;
-
-           labels.push("<li style=" 
-           + "list-style-type:none"
-           + ";text-align:center;"
-           + "\">" + "<h5><font color=\"black\">" + "Native American" + "</font></h5></li>");
-
-           limits.forEach(function(limit, index) {
-           labels.push("<li style=\"background-color: " + colors[index] 
-               + ";list-style-type:none"
-               + ";text-align:center;"
-               + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-           });
-
-           div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-           return div;
-       };
-
-       // Set up the Choropleth legend
-       otherLegend = L.control({ position: "topleft" });
-       otherLegend.onAdd = function() {
-           var div = L.DomUtil.create("div", "info legend");
-           var limits = otherGeojson.options.limits;
-           var colors = otherGeojson.options.colors;
-           var labels = [];
-
-           // Add min & max
-           var legendInfo = "<div></div>";
-
-           div.innerHTML = legendInfo;
-
-           labels.push("<li style=" 
-           + "list-style-type:none"
-           + ";text-align:center;"
-           + "\">" + "<h5><font color=\"black\">" + "Other" + "</font></h5></li>");
-
-           limits.forEach(function(limit, index) {
-           labels.push("<li style=\"background-color: " + colors[index] 
-               + ";list-style-type:none"
-               + ";text-align:center;"
-               + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-           });
-
-           div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-           return div;
-       };
-
-       // Set up the Choropleth legend
-       femaleLegend = L.control({ position: "topleft" });
-       femaleLegend.onAdd = function() {
-           var div = L.DomUtil.create("div", "info legend");
-           var limits = femaleGeojson.options.limits;
-           var colors = femaleGeojson.options.colors;
-           var labels = [];
-
-           // Add min & max
-           var legendInfo = "<div></div>";
-
-           div.innerHTML = legendInfo;
-
-           labels.push("<li style=" 
-           + "list-style-type:none"
-           + ";text-align:center;"
-           + "\">" + "<h5><font color=\"black\">" + "Female" + "</font></h5></li>");
-
-           limits.forEach(function(limit, index) {
-           labels.push("<li style=\"background-color: " + colors[index] 
-               + ";list-style-type:none"
-               + ";text-align:center;"
-               + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-           });
-
-           div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-           return div;
-       };
-
-       // Set up the Choropleth legend
-       maleLegend = L.control({ position: "topleft" });
-       maleLegend.onAdd = function() {
-           var div = L.DomUtil.create("div", "info legend");
-           var limits = maleGeojson.options.limits;
-           var colors = maleGeojson.options.colors;
-           var labels = [];
-
-           // Add min & max
-           var legendInfo = "<div></div>";
-
-           div.innerHTML = legendInfo;
-
-           labels.push("<li style=" 
-           + "list-style-type:none"
-           + ";text-align:center;"
-           + "\">" + "<h5><font color=\"black\">" + "Male" + "</font></h5></li>");
-
-           limits.forEach(function(limit, index) {
-           labels.push("<li style=\"background-color: " + colors[index] 
-               + ";list-style-type:none"
-               + ";text-align:center;"
-               + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-           });
-
-           div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-           return div;
-       };
-
-       // Set up the Choropleth legend
-       searchedLegend = L.control({ position: "topleft" });
-       searchedLegend.onAdd = function() {
-           var div = L.DomUtil.create("div", "info legend");
-           var limits = searchedGeojson.options.limits;
-           var colors = searchedGeojson.options.colors;
-           var labels = [];
-
-           // Add min & max
-           var legendInfo = "<div></div>";
-
-           div.innerHTML = legendInfo;
-
-           labels.push("<li style=" 
-           + "list-style-type:none"
-           + ";text-align:center;"
-           + "\">" + "<h5><font color=\"black\">" + "Searched" + "</font></h5></li>");
-
-           limits.forEach(function(limit, index) {
-           labels.push("<li style=\"background-color: " + colors[index] 
-               + ";list-style-type:none"
-               + ";text-align:center;"
-               + "\">" + "<font color=\"orange\">" + limits[index].toFixed(0) + "</font></li>");
-           });
-
-           div.innerHTML += "<ul>" + labels.join("") + "</ul>";
-           return div;
-       };
+        createGeojsonOverlay(data, overlayMaps.Precincts, "orange");
 
         // Set up the pin legend
-        var pinLegend = L.control({ position: "bottomleft" });
-        pinLegend.onAdd = function() {
-            var div = L.DomUtil.create("div", "pin legend");
-            var pinLabels = [];
-
-            // Add min & max
-            var legendInfoPin = "<div></div>";
-
-            div.innerHTML = legendInfoPin;
-
-            // Blue: 1371BA
-            // Orange: F18C20
-            // Pink: C0539E
-            // Purple: 5C396D
-            // Green: 06924A
-            // yellow: F4BB39 
-
-            pinLabels.push("<li style=" 
-                + "list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<h5><font color=\"black\">" + "Icon Legend" + "</font></h5></li>");
-            pinLabels.push("<li style=\"background-color: " + "#C0539E" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"white\">" + "White" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "#1371BA" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"white\">" + "Black" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "#5C396D" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"white\">" + "Latino" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "#06924A" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"white\">" + "Asian" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "#F18C20" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"white\">" + "Other" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "#F4BB39" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"black\">" + "Native American" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "white" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"black\">" + "<span class=\"ion-male\">  Male</span>" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "white" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"black\">" + "<span class=\"ion-female\">  Female</span>" + "</font></li>");
-            pinLabels.push("<li style=\"background-color: " + "white" 
-                + ";list-style-type:none"
-                + ";text-align:center;"
-                + "\">" + "<font color=\"black\">" + "<span class=\"ion-alert\">  Searched</span>" + "</font></li>");
-
-
-            div.innerHTML += "<ul>" + pinLabels.join("") + "</ul>";
-            return div;
-        };
-
-        // Adding legend to the map
-        pinLegend.addTo(stPaulMap);
+        createPinLegend(overlays.Pins.legend);
     });
 });
 
@@ -1051,54 +488,21 @@ d3.json(stPaulDistricts).then(function(data, err)
     if (err) throw err;
 
     // Creating a geoJSON layer with the retrieved data
-    L.geoJson(data, 
-    {
-        // Style each feature (in this case a neighborhood)
-        style: function(feature) 
-        {
-        return {
-            color: "green",
-            fillOpacity: 0.0,
-            weight: 2.0
-        };
-        }
-    }).addTo(districtLayer);
+    createGeojsonOverlay(data, overlayMaps.Districts, "green");
 });
 
+// Render the legend when an overlay is selected
 stPaulMap.on('overlayadd', function (eventLayer) 
 {
-    switch(eventLayer.name)
-    {
-        case ("Choropleth"): choroLegend.addTo(stPaulMap); break;
-        case ("White"): whiteLegend.addTo(stPaulMap); break;
-        case ("Black"): blackLegend.addTo(stPaulMap); break;
-        case ("Asian"): asianLegend.addTo(stPaulMap); break;
-        case ("Latino"): latinoLegend.addTo(stPaulMap); break;
-        case ("Native American"): nativeAmericanLegend.addTo(stPaulMap); break;
-        case ("Other"): otherLegend.addTo(stPaulMap); break;
-        case ("Female"): femaleLegend.addTo(stPaulMap); break;
-        case ("Male"): maleLegend.addTo(stPaulMap); break;
-        case ("Searched"): searchedLegend.addTo(stPaulMap); break;
-        default: break;
-    }
+    if (eventLayer.name in overlays)
+        overlays[eventLayer.name].legend.addTo(stPaulMap);
 });
 
+// Remove the legend when an overlay is de-selected
 stPaulMap.on('overlayremove', function (eventLayer) 
 {
-    switch(eventLayer.name)
-    {
-        case ("Choropleth"): stPaulMap.removeControl(choroLegend); break;
-        case ("White"): stPaulMap.removeControl(whiteLegend); break;
-        case ("Black"): stPaulMap.removeControl(blackLegend); break;
-        case ("Asian"): stPaulMap.removeControl(asianLegend); break;
-        case ("Latino"): stPaulMap.removeControl(latinoLegend); break;
-        case ("Native American"): stPaulMap.removeControl(nativeAmericanLegend); break;
-        case ("Other"): stPaulMap.removeControl(otherLegend); break;
-        case ("Female"): stPaulMap.removeControl(femaleLegend); break;
-        case ("Male"): stPaulMap.removeControl(maleLegend); break;
-        case ("Searched"): stPaulMap.removeControl(searchedLegend); break;
-        default: break;
-    }
+    if (eventLayer.name in overlays)
+        stPaulMap.removeControl(overlays[eventLayer.name].legend);
 });
 
 
